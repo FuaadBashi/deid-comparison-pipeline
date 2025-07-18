@@ -1,6 +1,5 @@
 import spacy
 
-# Load SpaCy English model
 nlp = spacy.load("en_core_web_sm")
 
 # Mapping entity labels to PHI token replacements
