@@ -1,29 +1,30 @@
-import spacy
+import re
 
-nlp = spacy.load("en_core_web_sm")
-
-# Mapping entity labels to PHI token replacements
-ENTITY_LABELS = {
-    "PERSON": "[NAME]",
-    "ORG": "[ORG]",
-    "GPE": "[LOCATION]",
-    "DATE": "[DATE]",
-    "EMAIL": "[EMAIL]",
+# Define regex patterns for each PHI category
+ENTITY_PATTERNS = {
+    "PHONE": r"\b(?:\+?\d{1,4}[-.\s]+)?(?:\(?\d{2,4}\)?[-.\s]+)?\d{2,4}[-.\s]+\d{2,4}(?:[-.\s]+\d{2,4})?\b",
+    "ID": r"\b\d{6,}\b",  # Match IDs that are 6+ digits, like MRNs
+    "DATE": r"\b(?:\d{1,2}/\d{1,2}/\d{2,4})\b",
+    "EMAIL": r"\b[\w.-]+@[\w.-]+\.\w+\b",
+    "NAME": r"\b(Mr\.|Ms\.|Mrs\.|Dr\.) [A-Z][a-z]+(?: [A-Z][a-z]+)?\b",
+    "HOSPITAL": r"\b(?:St\.?\s)?[A-Z][a-z]+(?: [A-Z][a-z]+)* (?:Medical Center|Hospital|Clinic)\b"
 }
 
-def rule_based_deid(text):
-    doc = nlp(text)
-    redacted_text = text
-    offset = 0
-    annotations = []
 
-    for ent in doc.ents:
-        if ent.label_ in ENTITY_LABELS:
-            replacement = ENTITY_LABELS[ent.label_]
-            start = ent.start_char + offset
-            end = ent.end_char + offset
-            annotations.append((ent.text, ent.label_))
+def rule_based_deid(text):
+    annotations = []
+    redacted_text = text
+
+    for label, pattern in ENTITY_PATTERNS.items():
+        matches = list(re.finditer(pattern, text))
+        for match in matches:
+            entity_text = match.group()
+            start = match.start()
+            end = match.end()
+            replacement = f"[{label}]"
+
+            annotations.append((entity_text, label))
             redacted_text = redacted_text[:start] + replacement + redacted_text[end:]
-            offset += len(replacement) - (end - start)
+            text = redacted_text  # update for next match to not shift indices
 
     return redacted_text, annotations
