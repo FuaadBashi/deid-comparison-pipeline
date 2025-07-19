@@ -3,6 +3,20 @@ from transformers import AutoTokenizer, AutoModelForTokenClassification, Trainin
 from datasets import Dataset
 from seqeval.metrics import classification_report, f1_score
 
+import transformers
+print("Transformers version:", transformers.__version__)
+print("Transformers module file:", transformers.__file__)
+from transformers import TrainingArguments
+print("TrainingArguments:", TrainingArguments)
+print("TrainingArguments doc:", TrainingArguments.__init__.__doc__)
+
+import transformers
+print("Transformers version:", transformers.__version__)
+print("Transformers module file:", transformers.__file__)
+from transformers import TrainingArguments
+print("TrainingArguments:", TrainingArguments)
+
+
 MODEL_NAME = "emilyalsentzer/Bio_ClinicalBERT"
 
 def preprocess_data(data, tokenizer, label2id, max_length=256):
@@ -53,15 +67,15 @@ def train_clinicalbert(train_data, test_data):
 
     # Training arguments (tweak as needed)
     training_args = TrainingArguments(
-        output_dir="./outputs/clinicalbert",
-        per_device_train_batch_size=8,
-        per_device_eval_batch_size=8,
-        num_train_epochs=2,
-        evaluation_strategy="epoch",
-        logging_dir="./outputs/logs",
-        report_to="none",
-        save_strategy="epoch"
-    )
+    output_dir="./outputs/clinicalbert",
+    per_device_train_batch_size=8,
+    per_device_eval_batch_size=8,
+    num_train_epochs=2,
+    eval_strategy="epoch",  # <-- change here!
+    save_strategy="epoch",
+    logging_dir="./outputs/logs",
+    report_to="none"
+    )       
 
     # Trainer expects HuggingFace datasets with batchable tokenize fn
     trainer = Trainer(

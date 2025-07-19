@@ -1,5 +1,5 @@
 import json
-from models.clinicalbert_finetune import train_clinicalbert
+from models.clinicalbert_finetune_copy import train_clinicalbert
 # from models.biobert_finetune import train_biobert
 # from models.roberta_finetune import train_roberta
 from models.traditional_deid import rule_based_deid
@@ -33,3 +33,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
