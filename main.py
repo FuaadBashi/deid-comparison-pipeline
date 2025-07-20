@@ -1,37 +1,40 @@
 import json
-from models.clinicalbert_finetune_copy import train_clinicalbert
-# from models.biobert_finetune import train_biobert
-# from models.roberta_finetune import train_roberta
-from models.traditional_deid import rule_based_deid
+from models.clinicalbert_finetune import train_clinicalbert, predict_clinicalbert
 
 def load_json(path):
     with open(path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
 def main():
-    # 1. Load Data
+    # --- 1. Load Data ---
     train_data = load_json("data/train.json")
-    test_data = load_json("data/test_groundtruth.json")
-    
+    groundtruth_data = load_json("data/test_groundtruth.json")
+    input_test_data = load_json("data/test.json")  # your "wild" test set
 
-    # 2. Train + Evaluate Models
-    print("\n== [CLINICALBERT] ==")
-    clinicalbert_results = train_clinicalbert(train_data, test_data)
-    print("ClinicalBERT:", clinicalbert_results)
+    # --- 2. Get all unique labels from your datasets ---
+    all_labels = set()
+    for d in train_data + groundtruth_data:
+        all_labels.update(d["labels"])
+    label_list = sorted(list(all_labels))
 
-    # print("\n== [BIOBERT] ==")
-    # biobert_results = train_biobert(train_data, test_data)
-    # print("BioBERT:", biobert_results)
+    print(set(label_list))  # Debug: See all labels
 
-    # print("\n== [ROBERTA] ==")
-    # roberta_results = train_roberta(train_data, test_data)
-    # print("RoBERTa:", roberta_results)
+    # --- 3. Train ClinicalBERT ---
+    print("\n== [CLINICALBERT Training] ==")
+    trainer, tokenizer, label_to_id, id_to_label = train_clinicalbert(
+        train_data, groundtruth_data, label_list
+    )
 
-    print("\n== [RULE-BASED] ==")
-    rule_results = rule_based_deid(test_data)
-    print("Rule-Based:", rule_results)
+    # --- 4. Predict on Unlabeled Test ---
+    print("\n== [CLINICALBERT Predict: Unlabeled Test] ==")
+    input_tokens = [d["tokens"] for d in input_test_data]
+    pred_results = predict_clinicalbert(trainer, tokenizer, input_tokens, label_to_id, id_to_label)
+
+    # --- 5. Save predictions to file ---
+    with open("outputs/clinicalbert_test_preds.json", "w", encoding="utf-8") as f:
+        json.dump(pred_results, f, indent=2, ensure_ascii=False)
+        
+    print("done!")
 
 if __name__ == "__main__":
     main()
-
-
