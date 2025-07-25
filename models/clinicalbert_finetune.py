@@ -1,145 +1,119 @@
-from transformers import AutoTokenizer, AutoModelForTokenClassification, TrainingArguments, Trainer
-from datasets import Dataset
+import os
+import torch
+import zipfile
 import numpy as np
-from seqeval.metrics import classification_report, f1_score
+from collections import Counter
+from transformers import (
+    AutoTokenizer,
+    AutoModelForTokenClassification,
+    TrainingArguments,
+    Trainer
+)
+from seqeval.metrics import f1_score
 
-def ensure_labels_are_ids(data, label_to_id):
-    """Convert string labels to integer ids (in-place)."""
-    for rec in data:
-        rec["labels"] = [label_to_id[lbl] if isinstance(lbl, str) else lbl for lbl in rec["labels"]]
-    return data
+# ──────── Dataset ─────────
+class NERDataset(torch.utils.data.Dataset):
+    def __init__(self, tokens, tags, tokenizer, label_to_id, max_len=512):
+        self.tokens, self.tags = tokens, tags
+        self.tok, self.l2id, self.max_len = tokenizer, label_to_id, max_len
 
-def train_clinicalbert(train_data, eval_data, label_list):
-    # 1. Build label dicts
-    label_to_id = {l: i for i, l in enumerate(label_list)}
-    id_to_label = {i: l for l, i in label_to_id.items()}
+    def __len__(self):
+        return len(self.tokens)
 
-    # 2. Convert labels to ids
-    train_data = ensure_labels_are_ids(train_data, label_to_id)
-    eval_data = ensure_labels_are_ids(eval_data, label_to_id)
-
-    # 3. Build HuggingFace Datasets
-    train_dataset = Dataset.from_dict({
-        "tokens": [d["tokens"] for d in train_data],
-        "labels": [d["labels"] for d in train_data]
-    })
-    eval_dataset = Dataset.from_dict({
-        "tokens": [d["tokens"] for d in eval_data],
-        "labels": [d["labels"] for d in eval_data]
-    })
-
-    # 4. Tokenizer
-    tokenizer = AutoTokenizer.from_pretrained("emilyalsentzer/Bio_ClinicalBERT")
-
-    def tokenize_and_align_labels(examples):
-        tokenized_inputs = tokenizer(
-            examples["tokens"],
+    def __getitem__(self, idx):
+        words, labels = self.tokens[idx], self.tags[idx]
+        enc = self.tok(
+            words,
             is_split_into_words=True,
-            padding="max_length",
             truncation=True,
-            max_length=512
+            max_length=self.max_len,
+            padding="max_length",
+            return_offsets_mapping=True
         )
-        labels = []
-        for i, label in enumerate(examples["labels"]):
-            word_ids = tokenized_inputs.word_ids(batch_index=i)
-            label_ids = []
-            prev_word_idx = None
-            for word_idx in word_ids:
-                if word_idx is None:
-                    label_ids.append(-100)
-                elif word_idx != prev_word_idx:
-                    label_ids.append(label[word_idx])
-                else:
-                    label_ids.append(label[word_idx])
-                prev_word_idx = word_idx
-            labels.append(label_ids)
-        tokenized_inputs["labels"] = labels
-        return tokenized_inputs
+        wids     = enc.word_ids()
+        aligned, prev = [], None
 
-    train_tokenized = train_dataset.map(tokenize_and_align_labels, batched=True)
-    eval_tokenized = eval_dataset.map(tokenize_and_align_labels, batched=True)
+        for wid in wids:
+            if wid is None:
+                aligned.append(-100)
+            elif wid != prev:
+                aligned.append(self.l2id[labels[wid]])
+            else:
+                aligned.append(-100)
+            prev = wid
 
-    # 5. Model
-    model = AutoModelForTokenClassification.from_pretrained(
-        "emilyalsentzer/Bio_ClinicalBERT",
-        num_labels=len(label_list)
-    )
-
-    # 6. Training Args
-    training_args = TrainingArguments(
-        output_dir="./outputs/clinicalbert",
-        per_device_train_batch_size=8,
-        per_device_eval_batch_size=8,
-        num_train_epochs=2,
-        eval_strategy="epoch",
-        save_strategy="epoch",
-        logging_dir="./outputs/logs",
-        report_to="none"
-    )
-
-    # 7. Metrics
-    def compute_metrics(p):
-        predictions = np.argmax(p.predictions, axis=2)
-        true_labels = p.label_ids
-        pred_tags = [
-            [id_to_label[p_] for (p_, l_) in zip(prediction, label) if l_ != -100]
-            for prediction, label in zip(predictions, true_labels)
-        ]
-        true_tags = [
-            [id_to_label[l_] for (p_, l_) in zip(prediction, label) if l_ != -100]
-            for prediction, label in zip(predictions, true_labels)
-        ]
-        return {
-            "f1": f1_score(true_tags, pred_tags),
-            "report": classification_report(true_tags, pred_tags)
+        # keep only tensors needed for model
+        out = {
+            "input_ids":     torch.tensor(enc["input_ids"]),
+            "attention_mask": torch.tensor(enc["attention_mask"]),
+            "labels":        torch.tensor(aligned)
         }
+        return out
 
-    # 8. Trainer
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=train_tokenized,
-        eval_dataset=eval_tokenized,
-        tokenizer=tokenizer,
-        compute_metrics=compute_metrics
-    )
+# ──────── Custom Trainer ─────────
+class WeightedSmoothTrainer(Trainer):
+    def __init__(self, smooth: float, class_w: torch.Tensor, **kw):
+        super().__init__(**kw)
+        self.smooth, self.class_w = smooth, class_w.to(self.args.device)
 
-    # 9. Train!
-    trainer.train()
-    return trainer, tokenizer, label_to_id, id_to_label
+    def compute_loss(self, model, inputs, return_outputs=False):
+        labels = inputs.pop("labels")
+        outputs = model(**inputs)
+        logits  = outputs.logits
+        mask    = labels.ne(-100)
 
-def predict_clinicalbert(trainer, tokenizer, input_tokens, label_to_id, id_to_label, max_length=128):
-    from datasets import Dataset
+        logits, labels = logits[mask], labels[mask]
+        ncls = logits.size(-1)
 
-    # Fake labels needed for HuggingFace Dataset compatibility (not used)
-    fake_labels = [[0] * len(seq) for seq in input_tokens]
+        true_dist = torch.zeros_like(logits).scatter_(1, labels.unsqueeze(1), 1)
+        true_dist = true_dist * (1 - self.smooth) + self.smooth / ncls
 
-    def tokenize_pred(examples):
-        return tokenizer(
-            examples["tokens"],
-            is_split_into_words=True,
-            padding="max_length",
-            truncation=True,
-            max_length=max_length
-        )
+        logp = torch.nn.functional.log_softmax(logits, dim=-1)
+        loss = -(true_dist * logp * self.class_w).sum(-1).mean()
 
-    pred_dataset = Dataset.from_dict({"tokens": input_tokens, "labels": fake_labels})
-    pred_dataset = pred_dataset.map(tokenize_pred, batched=True)
-    pred_dataset = pred_dataset.remove_columns("labels")  # not needed
+        return (loss, outputs) if return_outputs else loss
 
-    preds = trainer.predict(pred_dataset)
-    pred_ids = np.argmax(preds.predictions, axis=2)
+# ──────── Prediction helper ─────────
+def chunk_predict(trainer, tokenizer, docs, id2label, chunk=512, stride=256):
+    device = trainer.model.device
     results = []
-    for i, record in enumerate(input_tokens):
-        word_ids = pred_dataset[i]["input_ids"]  # For reference (not used)
-        tokens = record
-        pred_labels = []
-        pred_for_record = pred_ids[i]
-        # Only keep predictions for original tokens (skip padding)
-        non_pad_count = len(tokens)
-        pred_labels = [id_to_label[pred] for pred in pred_for_record[:non_pad_count]]
-        results.append({
-            "tokens": tokens,
-            "predicted_labels": pred_labels
-        })
+    for words in docs:
+        preds, start = [], 0
+        while start < len(words):
+            win = words[start : start + chunk]
+            enc = tokenizer(
+                win,
+                is_split_into_words=True,
+                truncation=True,
+                max_length=chunk,
+                padding="max_length",
+                return_tensors="pt"
+            )
+            wids = enc.word_ids()
+            enc = {k: v.to(device) for k, v in enc.items()}
+            with torch.no_grad():
+                logits = trainer.model(**enc).logits
+            top_ids = logits.argmax(-1)[0].cpu().numpy()
+
+            prev = None
+            for i, wid in enumerate(wids):
+                if wid is None or wid == prev:
+                    continue
+                preds.append(id2label[top_ids[i]])
+                prev = wid
+
+            start += stride
+            if len(preds) >= len(words):
+                break
+
+        results.append({"tokens": words, "predicted_labels": preds[: len(words)]})
     return results
+
+# ──────── Utility: zip a folder ─────────
+def zip_dir(input_dir: str, zip_path: str):
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for root, _, files in os.walk(input_dir):
+            for fn in files:
+                fp = os.path.join(root, fn)
+                arc = os.path.relpath(fp, input_dir)
+                zf.write(fp, arcname=arc)
