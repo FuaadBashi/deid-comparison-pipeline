@@ -27,7 +27,7 @@ def main():
     # ─── 1. Load Data ──────────────────────────────────────────
     print("🔄 Loading data…")
     train_data       = load_json("data/train.json")
-    groundtruth_data = load_json("data/test_groundtruth.json")
+    groundtruth_data = load_json("data/test_gt.json")
     input_test_data  = load_json("data/test.json")
 
     # ─── 2. Build label list ───────────────────────────────────
@@ -93,7 +93,7 @@ def main():
         lr_scheduler_type="cosine",
         weight_decay=0.01,
         max_grad_norm=1.0,
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
         metric_for_best_model="eval_f1",

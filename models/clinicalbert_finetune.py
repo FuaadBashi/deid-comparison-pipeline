@@ -50,13 +50,17 @@ class NERDataset(torch.utils.data.Dataset):
         }
         return out
 
-# ──────── Custom Trainer ─────────
+# ──────── Custom Trainer (with label smoothing & class weights) ─────────
 class WeightedSmoothTrainer(Trainer):
     def __init__(self, smooth: float, class_w: torch.Tensor, **kw):
         super().__init__(**kw)
         self.smooth, self.class_w = smooth, class_w.to(self.args.device)
 
-    def compute_loss(self, model, inputs, return_outputs=False):
+    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        """
+        Custom loss: label smoothing + class‑weighted cross‑entropy.
+        Accepts extra kwargs (e.g. num_items_in_batch).
+        """
         labels = inputs.pop("labels")
         outputs = model(**inputs)
         logits  = outputs.logits
