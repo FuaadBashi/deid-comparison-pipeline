@@ -2,9 +2,9 @@
 
 This repository trains and evaluates **three token-classification models** for Protected Health Information (PHI) de-identification using a **single, standardised pipeline** that follows the thesis methodology. The **only difference** between models is the number of training epochs:
 
-- **RoBERTa-Large** — 12 epochs  
-- **ClinicalBERT** — 18 epochs  
-- **BioBERT** — 18 epochs
+- **RoBERTa-Large** — 5 epochs  
+- **ClinicalBERT** — 5 epochs  
+- **BioBERT** — 5 epochs
 
 Everything else (preprocessing, cross-validation, oversampling, class weighting, optimiser, scheduler, metrics) is identical across models to ensure a fair comparison.
 
