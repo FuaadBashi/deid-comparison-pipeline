@@ -150,14 +150,6 @@ Evaluation: seqeval entity-level exact match; we report macro-F1, micro-F1, prec
 
 Tokeniser specifics: RoBERTa uses add_prefix_space=True. Others use defaults.
 
-Epochs: The only model-specific variation:
-
-RoBERTa-Large: 12
-
-ClinicalBERT: 18
-
-BioBERT: 18
-
 Configuration Details
 Setting	Value / Notes
 Folds	5 (StratifiedKFold)
