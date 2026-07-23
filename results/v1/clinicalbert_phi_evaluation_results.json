@@ -1,0 +1,87 @@
+{
+  "model_name": "clinicalbert_phi_detection_EXACT_EVAL",
+  "model_path": "./outputs/clinicalbert_location_phone_enhanced",
+  "model_type": "ClinicalBERT with Enhanced Training",
+  "evaluation_method": "EXACT match to training setup",
+  "training_features_matched": [
+    "Same EnhancedClinicalBERTNERDataset class",
+    "Same tokenization and alignment logic",
+    "Same label processing and normalization",
+    "Same max_length (256) and padding",
+    "No augmentation during evaluation",
+    "Same batch processing approach"
+  ],
+  "overall_metrics": {
+    "f1_score": 0.896962815782004,
+    "precision": 0.8559046587215602,
+    "recall": 0.9421586165772212
+  },
+  "detailed_classification_report": {
+    "DATE": {
+      "precision": 0.6691729323308271,
+      "recall": 0.9175257731958762,
+      "f1-score": 0.7739130434782607,
+      "support": 97
+    },
+    "HOSPITAL": {
+      "precision": 0.7566265060240964,
+      "recall": 0.8997134670487106,
+      "f1-score": 0.8219895287958116,
+      "support": 349
+    },
+    "ID": {
+      "precision": 0.9795258620689655,
+      "recall": 0.9978046103183315,
+      "f1-score": 0.9885807504078303,
+      "support": 911
+    },
+    "LOCATION": {
+      "precision": 0.46153846153846156,
+      "recall": 0.6428571428571429,
+      "f1-score": 0.537313432835821,
+      "support": 28
+    },
+    "NAME": {
+      "precision": 0.7810457516339869,
+      "recall": 0.8917910447761194,
+      "f1-score": 0.8327526132404182,
+      "support": 268
+    },
+    "PHONE": {
+      "precision": 0.44,
+      "recall": 0.4583333333333333,
+      "f1-score": 0.4489795918367347,
+      "support": 24
+    }
+  },
+  "entity_metrics": {},
+  "entity_counts": {
+    "DATE": {
+      "true_count": 97,
+      "predicted_count": 131
+    },
+    "HOSPITAL": {
+      "true_count": 349,
+      "predicted_count": 405
+    },
+    "ID": {
+      "true_count": 911,
+      "predicted_count": 927
+    },
+    "LOCATION": {
+      "true_count": 28,
+      "predicted_count": 34
+    },
+    "NAME": {
+      "true_count": 268,
+      "predicted_count": 300
+    },
+    "PHONE": {
+      "true_count": 24,
+      "predicted_count": 25
+    }
+  },
+  "evaluation_info": {
+    "processed_samples": 220
+  }
+}

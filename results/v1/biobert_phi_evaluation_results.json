@@ -1,0 +1,87 @@
+{
+  "model_name": "biobert_phi_detection_EXACT_EVAL",
+  "model_path": "./outputs/biobert_medical_phi",
+  "model_type": "BioBERT with Enhanced Training",
+  "evaluation_method": "EXACT match to training setup",
+  "training_features_matched": [
+    "Same EnhancedBioBERTNERDataset class",
+    "Same tokenization and alignment logic",
+    "Same label processing and normalization",
+    "Same max_length (256) and padding",
+    "No augmentation during evaluation",
+    "Same batch processing approach"
+  ],
+  "overall_metrics": {
+    "f1_score": 0.8386095592799504,
+    "precision": 0.7979917306556409,
+    "recall": 0.8835840418574231
+  },
+  "detailed_classification_report": {
+    "DATE": {
+      "precision": 0.6268656716417911,
+      "recall": 0.6,
+      "f1-score": 0.6131386861313868,
+      "support": 70
+    },
+    "HOSPITAL": {
+      "precision": 0.8793103448275862,
+      "recall": 0.9415384615384615,
+      "f1-score": 0.9093610698365527,
+      "support": 325
+    },
+    "ID": {
+      "precision": 0.9076433121019108,
+      "recall": 0.9606741573033708,
+      "f1-score": 0.933406113537118,
+      "support": 890
+    },
+    "LOCATION": {
+      "precision": 0.4230769230769231,
+      "recall": 0.5,
+      "f1-score": 0.4583333333333333,
+      "support": 22
+    },
+    "NAME": {
+      "precision": 0.4414715719063545,
+      "recall": 0.6255924170616114,
+      "f1-score": 0.5176470588235293,
+      "support": 211
+    },
+    "PHONE": {
+      "precision": 0.45454545454545453,
+      "recall": 0.45454545454545453,
+      "f1-score": 0.45454545454545453,
+      "support": 11
+    }
+  },
+  "entity_metrics": {},
+  "entity_counts": {
+    "DATE": {
+      "true_count": 70,
+      "predicted_count": 65
+    },
+    "HOSPITAL": {
+      "true_count": 325,
+      "predicted_count": 341
+    },
+    "ID": {
+      "true_count": 890,
+      "predicted_count": 942
+    },
+    "LOCATION": {
+      "true_count": 22,
+      "predicted_count": 20
+    },
+    "NAME": {
+      "true_count": 211,
+      "predicted_count": 293
+    },
+    "PHONE": {
+      "true_count": 11,
+      "predicted_count": 11
+    }
+  },
+  "evaluation_info": {
+    "processed_samples": 220
+  }
+}
