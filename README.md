@@ -96,8 +96,9 @@ deid-comparison-pipeline/
 │   └── configs.py            # the three published model configurations
 ├── tests/test_metrics.py     # 12 tests over BIO repair, span extraction, scoring
 ├── results/v1/               # evaluation JSON from the v1 pipeline
-├── notebooks/                # original Colab notebook (v2 pipeline, as run)
-└── docs/
+├── notebooks/
+│   ├── deid_pipeline_v2.ipynb             # original modular v2 notebook
+│   └── camera_ready_replication_v5.ipynb  # crash-safe camera-ready replication workflow
 ```
 
 ## Usage
@@ -120,6 +121,28 @@ Run the tests:
 ```bash
 PYTHONPATH=src pytest tests/ -v
 ```
+
+### Camera-ready Colab workflow
+
+[`notebooks/camera_ready_replication_v5.ipynb`](notebooks/camera_ready_replication_v5.ipynb)
+contains the complete ICACIn camera-ready replication workflow. It keeps the
+same frozen six-category protocol across RoBERTa-Large, ClinicalBERT, and
+BioBERT, while adding:
+
+- a pre-training audit of record counts, document identifiers, labels, and
+  train/test separation;
+- five-fold document-level cross-validation with inner validation used only
+  for checkpoint selection;
+- label-free blind inference before the gold test file is opened;
+- token-typed and strict entity-exact metrics from the same out-of-fold
+  predictions;
+- atomic result writes, per-fold checkpoint bundles, Google Drive backup, and
+  downloadable per-model and all-model result archives; and
+- automatic generation of the camera-ready comparison tables.
+
+The notebook expects the authorised XML corpora at the Colab paths declared in
+its first code cell. No clinical data, model checkpoints, credentials, or
+executed notebook outputs are stored in this repository.
 
 ### Input format
 
