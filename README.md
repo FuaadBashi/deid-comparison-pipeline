@@ -49,37 +49,29 @@ Predicting "John" where the gold span is "John Smith" earns zero credit under st
 ## Results
 
 > **Provenance note — read this before quoting any number.**
-> The metrics below come from the **v1 pipeline** (fixed 256-token windows, single held-out evaluation, no nested CV). The code in `src/` is the **v2 pipeline** (512-token sliding windows, 5-fold nested CV, locked one-shot eval, dual metrics). **They are different experiments.** The v2 re-run is pending and its results will be committed to `results/v2/` with the full per-fold JSON. Until then, `results/v1/` is what the numbers are, and it is labelled as such rather than presented as output of the published code.
+> The primary metrics below are from the **camera-ready v5 replication**: seeded document-level five-fold cross-validation, inner-validation-only checkpoint selection, and one locked 220-record test evaluated once. Strict entity-exact and token-typed metrics are computed from the same predictions. The earlier v1 experiment remains under [`results/v1/`](results/v1/) for historical provenance, but should not be compared directly with v5.
 
-**v1 results** — 220 evaluation documents, micro-averaged across the six PHI entity types, token-level typed scoring with evaluation preprocessing matched to training:
+### Locked final test (220 records)
 
-| Model | F1 | Precision | Recall |
-|---|---|---|---|
-| **RoBERTa-Large** + oversampling | **0.9624** | 0.9499 | 0.9752 |
-| ClinicalBERT (`emilyalsentzer/Bio_ClinicalBERT`) | 0.8970 | 0.8559 | 0.9422 |
-| BioBERT (`dmis-lab/biobert-base-cased-v1.1`) | 0.8386 | 0.7980 | 0.8836 |
+| Model | Strict P | Strict R | Strict F1 | Strict macro-F1 | Token F1 |
+|---|---:|---:|---:|---:|---:|
+| **BioBERT** | **0.9738** | **0.9796** | **0.9767** | **0.9503** | 0.9877 |
+| RoBERTa-Large | 0.9609 | 0.9754 | 0.9681 | 0.9446 | **0.9920** |
+| ClinicalBERT | 0.9557 | 0.9680 | 0.9618 | 0.9012 | 0.9834 |
 
-The headline finding: **general-domain RoBERTa-Large beat both biomedically pretrained encoders by 6.5 and 12.4 F1 points.** In-domain pretraining did not compensate for capacity on this task. That is the opposite of the usual assumption in clinical NLP tooling, and it is the result worth defending in an interview.
+BioBERT has the strongest strict entity-exact result on the locked test, while RoBERTa-Large has the strongest token-typed result. This difference is exactly why the repository reports both metrics: partially correct boundaries can look strong at token level while still failing exact-span de-identification.
 
-### Where the models actually differ (per-entity F1, v1)
+### Five-fold out-of-fold validation
 
-| Entity | RoBERTa-L | ClinicalBERT | BioBERT | Gold spans |
-|---|---|---|---|---|
-| ID | **0.996** | 0.989 | 0.933 | ~900 |
-| HOSPITAL | **0.952** | 0.822 | 0.909 | ~340 |
-| NAME | **0.940** | 0.833 | 0.518 | ~250 |
-| DATE | **0.808** | 0.774 | 0.613 | ~90 |
-| LOCATION | **0.780** | 0.537 | 0.458 | ~28 |
-| PHONE | **1.000** | 0.449 | 0.455 | ~20 |
+| Model | Strict F1 | Strict macro-F1 | Token F1 | Risk-weighted F1 |
+|---|---:|---:|---:|---:|
+| **RoBERTa-Large** | **0.9893** | **0.9679** | **0.9935** | **0.9892** |
+| BioBERT | 0.9815 | 0.9381 | 0.9885 | 0.9809 |
+| ClinicalBERT | 0.9763 | 0.9155 | 0.9870 | 0.9763 |
 
-Two things this table shows that the headline F1 hides:
+The validation ranking does not fully carry over to the locked test. That is useful evidence against selecting a system from one headline score alone: model choice should account for metric definition, per-entity failures, and behaviour on genuinely unseen data.
 
-- **The aggregate is dominated by `ID`.** Roughly 55% of gold spans are identifiers, which every model handles well. A single micro-F1 flatters all three systems. Macro-F1 across entity types is the more honest summary for a de-identification system, where a missed `NAME` and a missed `ID` are not equivalent failures.
-- **The rare classes are where the gap lives.** `LOCATION` and `PHONE` carry the fewest gold spans and show the widest spread — RoBERTa-Large reaches 1.000 on `PHONE` where both BERT variants sit near 0.45. On ~20 gold spans, that is a handful of decisions and the confidence interval is wide. Not a result to over-claim from.
-
-Per-entity gold counts differ slightly across models because v1 scored at the token level after each model's own subword alignment, and the three tokenizers segment differently. This is a further argument for entity-level scoring, which is tokenizer-independent — and is why v2 reports it.
-
-**Raw evaluation artefacts:** [`results/v1/`](results/v1/) — unedited JSON per model, including per-class precision/recall/support and predicted-vs-true entity counts.
+**Camera-ready aggregate artefacts:** [`results/v5/`](results/v5/) contains the cross-model summary and sanitized per-model aggregates, including per-entity and per-fold metrics. Record-level predictions, document identifiers, clinical text, checkpoints, and archives are intentionally excluded.
 
 ---
 
@@ -95,7 +87,9 @@ deid-comparison-pipeline/
 │   ├── training.py           # weighted trainer, nested CV, locked final eval
 │   └── configs.py            # the three published model configurations
 ├── tests/test_metrics.py     # 12 tests over BIO repair, span extraction, scoring
-├── results/v1/               # evaluation JSON from the v1 pipeline
+├── results/
+│   ├── v1/                   # historical v1 evaluation JSON
+│   └── v5/                   # sanitized camera-ready aggregate results
 ├── notebooks/
 │   ├── deid_pipeline_v2.ipynb             # original modular v2 notebook
 │   └── camera_ready_replication_v5.ipynb  # crash-safe camera-ready replication workflow

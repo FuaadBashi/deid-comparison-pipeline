@@ -1,0 +1,146 @@
+{
+  "schema_version": "icacin_camera_ready_replication_v5",
+  "seed": 42,
+  "evaluation": {
+    "cross_validation": "Seeded document-level five-fold CV with checkpoint selection on inner validation only.",
+    "final_test": "One-shot evaluation of the final model on 220 locked records.",
+    "metrics": "Strict entity-exact and token-typed metrics computed from the same predictions."
+  },
+  "models": {
+    "biobert": {
+      "name": "BioBERT",
+      "model_id": "dmis-lab/biobert-base-cased-v1.1",
+      "oof_cv": {
+        "strict": {
+          "precision": 0.9791069806442596,
+          "recall": 0.9839887640449438,
+          "f1": 0.9815418023887079,
+          "macro_f1": 0.9380570918608075,
+          "tp": 14012,
+          "fp": 299,
+          "fn": 228
+        },
+        "token": {
+          "precision": 0.9870052619537864,
+          "recall": 0.990040389205067,
+          "f1": 0.9885204958412575,
+          "macro_f1": 0.9711648131453915,
+          "tp": 21571,
+          "fp": 284,
+          "fn": 217
+        },
+        "risk_weighted_f1": 0.9808671016146634
+      },
+      "final_heldout_test": {
+        "strict": {
+          "precision": 0.9738289398824199,
+          "recall": 0.9795879435330027,
+          "f1": 0.9766999524488826,
+          "macro_f1": 0.95028633361447,
+          "tp": 5135,
+          "fp": 138,
+          "fn": 107
+        },
+        "token": {
+          "precision": 0.987313708584801,
+          "recall": 0.988043880192284,
+          "f1": 0.9876786594381468,
+          "macro_f1": 0.9781337078784752,
+          "tp": 8016,
+          "fp": 103,
+          "fn": 97
+        }
+      }
+    },
+    "clinicalbert": {
+      "name": "ClinicalBERT",
+      "model_id": "emilyalsentzer/Bio_ClinicalBERT",
+      "oof_cv": {
+        "strict": {
+          "precision": 0.9726094229160859,
+          "recall": 0.9799859550561798,
+          "f1": 0.9762837554218554,
+          "macro_f1": 0.9154643320906871,
+          "tp": 13955,
+          "fp": 393,
+          "fn": 285
+        },
+        "token": {
+          "precision": 0.9859832348495259,
+          "recall": 0.987929135303837,
+          "f1": 0.9869552259336527,
+          "macro_f1": 0.9636952710441857,
+          "tp": 21525,
+          "fp": 306,
+          "fn": 263
+        },
+        "risk_weighted_f1": 0.97628947731785
+      },
+      "final_heldout_test": {
+        "strict": {
+          "precision": 0.9557355434168393,
+          "recall": 0.9679511636779855,
+          "f1": 0.961804568287366,
+          "macro_f1": 0.9011951590125543,
+          "tp": 5074,
+          "fp": 235,
+          "fn": 168
+        },
+        "token": {
+          "precision": 0.983600493218249,
+          "recall": 0.9832367804757796,
+          "f1": 0.9834186032176538,
+          "macro_f1": 0.959532755417738,
+          "tp": 7977,
+          "fp": 133,
+          "fn": 136
+        }
+      }
+    },
+    "roberta_large": {
+      "name": "RoBERTaLarge",
+      "model_id": "roberta-large",
+      "oof_cv": {
+        "strict": {
+          "precision": 0.9891189891189891,
+          "recall": 0.9894662921348315,
+          "f1": 0.9892926101456908,
+          "macro_f1": 0.9678526781616371,
+          "tp": 14090,
+          "fp": 155,
+          "fn": 150
+        },
+        "token": {
+          "precision": 0.9944819975168989,
+          "recall": 0.9926106113456948,
+          "f1": 0.9935454232226943,
+          "macro_f1": 0.986394120555079,
+          "tp": 21627,
+          "fp": 120,
+          "fn": 161
+        },
+        "risk_weighted_f1": 0.9892241766786092
+      },
+      "final_heldout_test": {
+        "strict": {
+          "precision": 0.9609096034579966,
+          "recall": 0.9753910721098817,
+          "f1": 0.9680961847959861,
+          "macro_f1": 0.9446426018137384,
+          "tp": 5113,
+          "fp": 208,
+          "fn": 129
+        },
+        "token": {
+          "precision": 0.9927169485248735,
+          "recall": 0.9912486133366203,
+          "f1": 0.9919822375724682,
+          "macro_f1": 0.9875530309166423,
+          "tp": 8042,
+          "fp": 59,
+          "fn": 71
+        }
+      }
+    }
+  }
+}

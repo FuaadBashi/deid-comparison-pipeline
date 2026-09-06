@@ -15,6 +15,14 @@ outputs/
 checkpoint-*/
 final_model/
 
+# restricted or bulky evaluation artefacts: publish aggregate summaries only
+**/oof_predictions.json
+**/heldout_predictions.json
+**/blind_predictions*.json
+**/final_test_predictions_with_gold*.json
+**/fold_assignments.json
+**/*_cv_complete.zip
+
 .DS_Store
 .vscode/
 .idea/
