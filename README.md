@@ -2,7 +2,7 @@
 
 Fine-tunes and benchmarks three transformer encoders — **RoBERTa-Large**, **ClinicalBERT**, and **BioBERT** — for token-level Protected Health Information (PHI) detection in clinical notes, under an evaluation protocol built to resist the failure modes that inflate NER numbers in published work.
 
-The interesting result is not that a big model wins. It is **how much** it wins by, and how much of the reported gap between clinical NER systems disappears once you fix the metric definition and stop selecting checkpoints on your own test set.
+The main result is that model ranking changes with the evaluation protocol and metric: RoBERTa-Large leads pooled out-of-fold strict F1, while BioBERT leads strict F1 on the locked final test. The tables below keep those evaluations separate.
 
 ---
 
@@ -162,9 +162,7 @@ Developed against i2b2/n2c2-style de-identification corpora. **No clinical data 
 
 Findings from this work informed a co-authored conference paper on medical NER.
 
-> **[PLACEHOLDER — replace before making the repo public]**
-> Authors, "Title", *Venue*, Year. DOI / arXiv link.
-> If not yet published, state exactly one of: `Under Review at <venue>` or `Preprint`, and link the manuscript.
+Publication metadata is not recorded here. Use the versioned aggregate artifacts and their evaluation protocol as the source for the results below.
 
 ## Limitations
 
