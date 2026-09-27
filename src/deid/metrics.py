@@ -61,7 +61,15 @@ def _to_type(tag: str) -> str:
     if "-" not in tag: return "O"
     return tag.split("-", 1)[1]
 
+def _validate_alignment(yt_docs, yp_docs):
+    if len(yt_docs) != len(yp_docs):
+        raise ValueError("Gold and prediction document counts differ")
+    for i, (gold, pred) in enumerate(zip(yt_docs, yp_docs)):
+        if len(gold) != len(pred):
+            raise ValueError(f"Token counts differ in document {i}")
+
 def token_typed_breakdown(yt_docs: List[List[str]], yp_docs: List[List[str]]) -> Dict[str, Any]:
+    _validate_alignment(yt_docs, yp_docs)
     tp = fp = fn = 0
     per = {e: {"tp":0,"fp":0,"fn":0,"gold":0,"pred":0} for e in L.ENTITY_TYPES}
 
@@ -145,6 +153,7 @@ def extract_entities_bio(tags: List[str]) -> List[Tuple[int, int, str]]:
     return spans
 
 def entity_exact_breakdown(yt_docs: List[List[str]], yp_docs: List[List[str]]) -> Dict[str, Any]:
+    _validate_alignment(yt_docs, yp_docs)
     tp = fp = fn = 0
     per = {e: {"tp":0,"fp":0,"fn":0,"gold":0,"pred":0} for e in L.ENTITY_TYPES}
 
