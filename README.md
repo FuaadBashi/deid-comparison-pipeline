@@ -1,5 +1,7 @@
 # Clinical PHI De-Identification — Multi-Encoder Comparison
 
+[![CI](https://github.com/FuaadBashi/deid-comparison-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/FuaadBashi/deid-comparison-pipeline/actions/workflows/ci.yml)
+
 Fine-tunes and benchmarks three transformer encoders — **RoBERTa-Large**, **ClinicalBERT**, and **BioBERT** — for token-level Protected Health Information (PHI) detection in clinical notes, under an evaluation protocol built to resist the failure modes that inflate NER numbers in published work.
 
 The main result is that model ranking changes with the evaluation protocol and metric: RoBERTa-Large leads pooled out-of-fold strict F1, while BioBERT leads strict F1 on the locked final test. The tables below keep those evaluations separate.
@@ -115,6 +117,8 @@ Run the tests:
 ```bash
 PYTHONPATH=src pytest tests/ -v
 ```
+
+CI runs them on every push, with the CPU build of PyTorch.
 
 ### Camera-ready Colab workflow
 
