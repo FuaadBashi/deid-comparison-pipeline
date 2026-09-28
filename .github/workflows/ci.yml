@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install
+        # deid.labels imports torch only to seed it, so the CPU build is enough and is a fraction
+        # of the size of the default CUDA wheel. The tests never load a model, so no transformers.
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
+          python -m pip install numpy pytest
+      - name: Check every module compiles
+        # The tests import labels and metrics only; this catches a syntax error in the rest.
+        run: python -m compileall -q src run_pipeline.py
+      - name: Test
+        run: PYTHONPATH=src python -m pytest tests -v
